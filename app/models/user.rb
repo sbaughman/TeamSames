@@ -22,13 +22,16 @@ class User < ActiveRecord::Base
 
   validates :username, uniqueness: true,
                        length: { minimum: 5, too_short: "Username must be at least 5 characters",
-                                 maximum: 20, too_long: "Username must be 20 characters or less" }
+                                 maximum: 25, too_long: "Username must be 25 characters or less" }
   validates :email, presence: true,
                     uniqueness: true,
                     case_sensitive: false
   validate :email_is_valid_format
   validates :password, presence: true,
                        length: { minimum: 6, too_short: "Password must be at least 6 characters" }
+  validates :bio, presence: true
+
+  before_save :set_default_picture
 
 
   def email_is_valid_format
@@ -36,11 +39,11 @@ class User < ActiveRecord::Base
   end
 
   def blocking?(other_user)
-    blocking.include?(other_user)
+    blocking.exists?(other_user)
   end
 
   def blocked_by?(other_user)
-    blocked_by.include?(other_user)
+    blocked_by.exists?(other_user)
   end
 
   def block(other_user)
@@ -52,10 +55,18 @@ class User < ActiveRecord::Base
     active_blocks.find_by(blocked_id: other_user.id).destroy
   end
 
+  def to_param
+    username
+  end
+
   private
 
   def downcase_email
     self.email = self.email.downcase if self.email.present?
+  end
+
+  def set_default_picture
+    self.picture_url = picture_url.empty? ? "https://unsplash.it/400/?image=1061" : picture_url
   end
 
 end
